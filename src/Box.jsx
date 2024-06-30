@@ -22,7 +22,7 @@ export function Box(props) {
       onPointerOver={() => setHover(true)}
       onPointerOut={() => setHover(false)}
     >
-      <boxGeometry args={[1, 1, 1]} />
+      <boxGeometry args={[1, 2, 1]} />
       <meshStandardMaterial color={hovered ? "skyblue" : "orange"} />
     </mesh>
   );
