@@ -1,3 +1,5 @@
+import { BasicEvaluator } from './evaluator.js';
+
 export class BasicInterpreter {
   constructor() {
     /**
@@ -16,6 +18,8 @@ export class BasicInterpreter {
     this.whileStack = [];
 
     this.haltProgram = false;
+
+    this.evaluator = new BasicEvaluator(this.variables);
   }
 
   /**
@@ -133,6 +137,7 @@ export class BasicInterpreter {
     console.log(` - VARIABLE: ${variable}`);
     console.log(` - VALUE: ${value}`);
 
+    console.log(`Assigning ${value} to variable ${variable}`)
     this.variables[variable] = this.evaluate(value);
   }
 
@@ -142,20 +147,34 @@ export class BasicInterpreter {
     console.log(` - CONDITION: ${condition}`);
     console.log(` - TARGET_LINE: ${targetLine}`);
 
+    const result = this.evaluate(condition);
+
+
     if (this.evaluate(condition)) {
-      console.log(`GOTO ${targetLine}`);
-      this.programCounter = targetLine;
+      console.log(`Condition evaluates to ${result} (true), jump to ${targetLine}`);
+      this.programCounter = targetLine - 1;
+    } else {
+      console.log(`Condition evaluates to ${result} (false)`);
     }
   }
 
   handleFor(args) {
-    const [variable, start, end] = args.match(/^(\w+)\s*=\s*(\d+)\s+TO\s+(\d+)$/);
-    this.variables[variable] = parseInt(start);
-    this.forStack.push({
+    const [, variable, startExp, stopExp] = args.match(/^(\w+)\s*=\s*(.+)\s+TO\s+(.+)$/);
+
+    const start = this.evaluate(startExp);
+    const stop = this.evaluate(stopExp);
+
+    this.variables[variable] = start;
+
+    const loop = {
       variable,
-      start: this.programCounter,
-      end: parseInt(end)
-    });
+      lineNumber: this.programCounter,
+      stop
+    };
+
+    console.log(`Starting FOR loop (${variable} = ${start} TO ${stop})`);
+
+    this.forStack.push(loop);
   }
 
   handleNext(args) {
@@ -166,9 +185,9 @@ export class BasicInterpreter {
     }
 
     this.variables[variable]++;
-    if (this.variables[variable] <= forLoop.end) {
+    if (this.variables[variable] <= forLoop.stop) {
       this.forStack.push(forLoop);
-      this.programCounter = forLoop.start;
+      this.programCounter = forLoop.lineNumber;
     }
   }
 
@@ -183,20 +202,20 @@ export class BasicInterpreter {
   handleWend(args) {
     const whileLoop = this.whileStack.pop();
     if (this.evaluate(whileLoop.condition)) {
-      this.forStack.push(whileLoop);
+      this.whileStack.push(whileLoop);
       this.programCounter = whileLoop.start;
     }
   }
 
   handleGoto(args) {
     const targetLine = parseInt(args);
-    this.programCounter = targetLine;
+    this.programCounter = targetLine - 1;
   }
 
   handleGosub(args) {
     const targetLine = parseInt(args);
     this.callStack.push(this.programCounter);
-    this.programCounter = targetLine;
+    this.programCounter = targetLine - 1;
   }
 
   handleReturn() {
@@ -209,7 +228,7 @@ export class BasicInterpreter {
   }
 
   evaluate(expression) {
-    // TODO: Implement expression evaluator
+    return this.evaluator.evaluate(expression);
   }
 }
 
@@ -217,15 +236,13 @@ export class BasicInterpreter {
 // Example usage:
 const program = `
 10 LET X = 5
-20 LET Y = 10
-30 PRINT X
-40 PRINT Y
-50 IF X < Y THEN 70
-60 GOTO 90
-70 PRINT "X is less than Y"
-80 GOTO 100
-90 PRINT "X is not less than Y"
-100 END
+20 LET Z = 0
+30 LET STOP = 10
+50 FOR Y = 1 TO STOP
+60   LET Z = Z + X
+70   PRINT Z
+80 NEXT Y
+90 END
 `;
 
 const interpreter = new BasicInterpreter();
