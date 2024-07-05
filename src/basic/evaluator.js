@@ -50,8 +50,9 @@ export class BASICEvaluator {
     //     a) " matches a double quote.
     //     b) .*? matches any number of any characters, non-greedily
     //     c)  " matches the closing double quote.
-    //   4) [-+*/<>=()]: Matches on or more character from the set -, +, *, /, <, >, =, (, and ).
-    const regex = /\s*([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=()]+)\s*/g;
+    //   4) [-+*/<>=()]: Matches one or more character from the set -, +, *, /, <, >, =, (, and ).
+    //   5) [()]: Matches one character from the set (, )
+    const regex = /\s*([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=]+|[()])\s*/g;
 
     return expression
       .match(regex)
@@ -67,7 +68,8 @@ export class BASICEvaluator {
     const outputQueue = [];
     const operatorStack = [];
 
-    tokens.forEach(token => {
+    while (tokens.length > 0) {
+      const token = tokens.shift();
       if (!isNaN(token)) {
         outputQueue.push(parseFloat(token));
       } else if (/^".*"$/.test(token)) {
@@ -90,7 +92,7 @@ export class BASICEvaluator {
         }
         operatorStack.pop();
       }
-    });
+    };
 
     while (operatorStack.length) {
       outputQueue.push(operatorStack.pop());
@@ -143,6 +145,7 @@ export class BASICEvaluator {
         // Only concatenation and equality operators are supported for strings
         case '+': return strA + strB;
         case '=': return strA === strB ? 1 : 0;
+        case '<>': return strA !== strB ? 1 : 0;
         default: throw new Error(`Unsupported operator ${operator} for strings`);
       }
     }

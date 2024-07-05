@@ -1,0 +1,42 @@
+10 REM Conway's Game of Life in TinyBASIC
+20 WIDTH = 80
+30 HEIGHT = 24
+40 REM Initialize the grid with random values
+50 FOR Y = 0 TO HEIGHT - 1
+60   FOR X = 0 TO WIDTH - 1
+70     IF RND > 0.8 THEN SETPX X, Y, 1 ELSE SETPX X, Y, 0
+80   NEXT X
+90 NEXT Y
+100 REM Main game loop
+110 WHILE 1
+120   REM Calculate next generation
+130   FOR Y = 0 TO HEIGHT - 1
+140     FOR X = 0 TO WIDTH - 1
+150       ALIVE = GETPX(X, Y)
+160       NEIGHBORS = 0
+170       REM Count neighbors
+180       FOR DY = -1 TO 1
+190         FOR DX = -1 TO 1
+200           IF DX = 0 AND DY = 0 THEN GOTO 230
+210           NX = X + DX
+220           NY = Y + DY
+230           IF NX >= 0 AND NX < WIDTH AND NY >= 0 AND NY < HEIGHT THEN
+240             NEIGHBORS = NEIGHBORS + GETPX(NX, NY)
+250           END IF
+260         NEXT DX
+270       NEXT DY
+280       REM Apply rules of the game
+290       IF ALIVE = 1 THEN
+300         IF NEIGHBORS < 2 OR NEIGHBORS > 3 THEN
+310           SETPX X, Y, 0
+320         END IF
+330       ELSE
+340         IF NEIGHBORS = 3 THEN
+350           SETPX X, Y, 1
+360         END IF
+370       END IF
+380     NEXT X
+390   NEXT Y
+400   REM Delay to visualize each generation
+410   PAUSE 100
+420 WEND

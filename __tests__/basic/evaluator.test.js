@@ -20,7 +20,7 @@ describe('evaluating', () => {
     });
   });
 
-  describe('arithmetic expression', () => {
+  describe('arithmetic expression (single)', () => {
     test('adding two integers returns sum', () => {
       expect(new BASICEvaluator().evaluate('13 + 22')).toBe(35);
     });
@@ -56,11 +56,10 @@ describe('evaluating', () => {
     test('dividing two decimals numbers returns quotient', () => {
       expect(new BASICEvaluator().evaluate('12.8 / 3.2')).toBe(4);
     });
-
   });
 
   describe('logical operations (single)', () => {
-    describe('greater than >', () => {
+    describe('>', () => {
       test('A > B returns 1 when A is larger than B', () => {
         expect(new BASICEvaluator().evaluate('5 > 3')).toBe(1);
       });
@@ -74,7 +73,7 @@ describe('evaluating', () => {
       });
     });
 
-    describe('less than <', () => {
+    describe('<', () => {
       test('A < B returns 1 when A is larger than B', () => {
         expect(new BASICEvaluator().evaluate('3 < 5')).toBe(1);
       });
@@ -88,7 +87,7 @@ describe('evaluating', () => {
       });
     });
 
-    describe('greater than or equal to >=', () => {
+    describe('>=', () => {
       test('A >= B returns 1 when A is larger than B', () => {
         expect(new BASICEvaluator().evaluate('5 >= 3')).toBe(1);
       });
@@ -102,7 +101,7 @@ describe('evaluating', () => {
       });
     });
 
-    describe('less than or equal to <=', () => {
+    describe('<=', () => {
       test('A <= B returns 1 when A is larger than B', () => {
         expect(new BASICEvaluator().evaluate('3 <= 5')).toBe(1);
       });
@@ -114,6 +113,67 @@ describe('evaluating', () => {
       test('A <= B returns 1 when A is equal to B', () => {
         expect(new BASICEvaluator().evaluate('3 <= 3')).toBe(1);
       });
+    });
+
+    describe('=', () => {
+      test('A = B returns 1 when A is equal to B', () => {
+        expect(new BASICEvaluator().evaluate('123 = 123')).toBe(1);
+      });
+
+      test('A = B returns 0 when A is not equal to B', () => {
+        expect(new BASICEvaluator().evaluate('123 = 122')).toBe(0);
+      });
+    });
+
+    describe('<>', () => {
+      test('A <> B returns 1 when A is not equal to B', () => {
+        expect(new BASICEvaluator().evaluate('123 <> 121')).toBe(1);
+      });
+
+      test('A <> B returns 0 when A is equal to B', () => {
+        expect(new BASICEvaluator().evaluate('123 <> 123')).toBe(0);
+      });
+    });
+  });
+
+  describe('string operations (single)', () => {
+    test('concatenation', () => {
+      expect(new BASICEvaluator().evaluate('"Hello" + " world!"')).toBe("Hello world!");
+    });
+
+    test('A = B returns 1 when A equals B', () => {
+      expect(new BASICEvaluator().evaluate('"Test" = "Test"')).toBe(1);
+    });
+
+    test('A = B returns 1 when A is not equal to B', () => {
+      expect(new BASICEvaluator().evaluate('"Test" = "Test1"')).toBe(0);
+    });
+
+    test('A <> B returns 1 when A is not equal to B', () => {
+      expect(new BASICEvaluator().evaluate('"Test" <> "Test1"')).toBe(1);
+    });
+
+    test('A <> B returns 0 when A equals B', () => {
+      expect(new BASICEvaluator().evaluate('"Test" <> "Test"')).toBe(0);
+    });
+
+  });
+
+  describe('arithmetic expression (nested)', () => {
+    test('group on LHS', () => {
+      expect(new BASICEvaluator().evaluate('(1 + 5) * 8')).toBe(48);
+    });
+
+    test('group on RHS', () => {
+      expect(new BASICEvaluator().evaluate('4 * (8 - 4)')).toBe(16);
+    });
+
+    test('three groups', () => {
+      expect(new BASICEvaluator().evaluate('4 * (8 - 4) - 8')).toBe(8);
+    });
+
+    test('multiple nested groups', () => {
+      expect(new BASICEvaluator().evaluate('5 * (8 - (4 + 3)) - 8')).toBe(-3);
     });
   });
 });

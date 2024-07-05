@@ -118,6 +118,12 @@ export class BASICInterpreter {
       case 'PRINT':
         this.handlePrint(args);
         break;
+      case 'SETPX':
+        this.handleSetPixel(args);
+        break;
+      case 'GETPX':
+        this.handleGetPixel(args);
+        break;
       case 'END':
         this.haltProgram = true;
         break;
@@ -228,6 +234,16 @@ export class BASICInterpreter {
   handlePrint(args) {
     const message = this.evaluate(args);
     console.log(message);
+  }
+
+  handleSetPixel(args) {
+    const [, x, y, color] = args.match(/^(\d+)\s*(\d+)\s*(\d+)$/);
+    console.log(x, y, color);
+  }
+
+  handleGetPixel(args) {
+    const [, x, y] = args.match(/^(\d+)\s*(\d+)$/);
+    console.log(x, y);
   }
 
   evaluate(expression) {
