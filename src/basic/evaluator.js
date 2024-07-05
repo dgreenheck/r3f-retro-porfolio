@@ -1,43 +1,71 @@
-export class BasicEvaluator {
+const precedence = {
+  '=': 1,
+  '<>': 2,
+  '<=': 2,
+  '>=': 2,
+  '<': 2,
+  '>': 2,
+  '+': 3,
+  '-': 3,
+  '*': 4,
+  '/': 4
+};
+
+function isOperator(token) {
+  return ['+', '-', '*', '/', '=', '<>', '<', '<=', '>', '>='].includes(token);
+}
+
+export class BASICEvaluator {
   /**
    * @param {object} variables 
    */
-  constructor(variables) {
+  constructor(variables = {}) {
     this.variables = variables;
   }
 
+  /**
+   * Evaluates a BASIC expression
+   * @param {string} expression The BASIC expression to evaluate
+   * @returns {any} Returns the result of the expression
+   */
   evaluate(expression) {
-    return this.parseExpression(expression);
-  }
-
-  parseExpression(expression) {
     const tokens = this.tokenize(expression);
     return this.parseTokens(tokens);
   }
 
+  /**
+   * Breaks a BASIC expression into individual tokens
+   * @param {string} expression The BASIC expression to tokenize
+   * @returns {string[]} Returns an array of tokens
+   */
   tokenize(expression) {
-    const regex = /\s*([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=()])\s*/g;
-    return expression.match(regex).map(token => token.trim());
+    // ([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=()]):  This part is a capturing
+    //  group that matches one of the following alternatives:
+    //   1) [A-Za-z]+: Matches one or more letters (uppercase or lowercase).
+    //   2) \d+\.?\d*: Matches a number, which can be an integer or a decimal:
+    //     a)  \d+ matches one or more digits.
+    //     b)  \.? optionally matches a decimal point.
+    //     c)  \d* matches zero or more digits following the decimal point.
+    //   3) ".*?": Matches a string enclosed in double quotes:
+    //     a) " matches a double quote.
+    //     b) .*? matches any number of any characters, non-greedily
+    //     c)  " matches the closing double quote.
+    //   4) [-+*/<>=()]: Matches on or more character from the set -, +, *, /, <, >, =, (, and ).
+    const regex = /\s*([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=()]+)\s*/g;
+
+    return expression
+      .match(regex)
+      .map(token => token.trim());
   }
 
+  /**
+   * Parses a tokenized expression, computing the result
+   * @param {string[]} tokens The array of tokens to parse
+   * @returns 
+   */
   parseTokens(tokens) {
     const outputQueue = [];
     const operatorStack = [];
-
-    const precedence = {
-      '=': 1,
-      '<>': 2,
-      '<=': 2,
-      '>=': 2,
-      '<': 2,
-      '>': 2,
-      '+': 3,
-      '-': 3,
-      '*': 4,
-      '/': 4
-    };
-
-    const isHigherPrecedence = (op1, op2) => precedence[op1] > precedence[op2];
 
     tokens.forEach(token => {
       if (!isNaN(token)) {
@@ -46,9 +74,11 @@ export class BasicEvaluator {
         outputQueue.push(token.slice(1, -1));
       } else if (/^[A-Za-z]+$/.test(token)) {
         outputQueue.push(this.variables[token] !== undefined ? this.variables[token] : 0);
-      } else if (this.isOperator(token)) {
-        while (operatorStack.length && this.isOperator(operatorStack[operatorStack.length - 1]) &&
-          isHigherPrecedence(operatorStack[operatorStack.length - 1], token)) {
+      } else if (isOperator(token)) {
+        const nextOperator = operatorStack[operatorStack.length - 1];
+        while (operatorStack.length &&
+          isOperator(nextOperator) &&
+          precedence[nextOperator] > precedence[token]) {
           outputQueue.push(operatorStack.pop());
         }
         operatorStack.push(token);
@@ -69,11 +99,16 @@ export class BasicEvaluator {
     return this.evaluateRPN(outputQueue);
   }
 
+  /**
+   * 
+   * @param {*} queue 
+   * @returns 
+   */
   evaluateRPN(queue) {
     const stack = [];
 
     queue.forEach(token => {
-      if (this.isOperator(token)) {
+      if (isOperator(token)) {
         const b = stack.pop();
         const a = stack.pop();
         stack.push(this.applyOperator(a, b, token));
@@ -86,6 +121,7 @@ export class BasicEvaluator {
   }
 
   applyOperator(a, b, operator) {
+    // If both operands are numbers, perform numeric operations
     if (typeof a === 'number' && typeof b === 'number') {
       switch (operator) {
         case '+': return a + b;
@@ -99,33 +135,16 @@ export class BasicEvaluator {
         case '=': return a === b ? 1 : 0;
         case '<>': return a !== b ? 1 : 0;
       }
+      // Otherwise, treat both operands as strings
     } else {
       const strA = a.toString();
       const strB = b.toString();
       switch (operator) {
+        // Only concatenation and equality operators are supported for strings
         case '+': return strA + strB;
         case '=': return strA === strB ? 1 : 0;
         default: throw new Error(`Unsupported operator ${operator} for strings`);
       }
     }
   }
-
-  isOperator = token => ['+', '-', '*', '/', '=', '<>', '<', '<=', '>', '>='].includes(token);
 }
-
-/*
-
-// Example usage:
-const evaluator = new BasicEvaluator();
-evaluator.variables = {
-  A: 5,
-  B: 10,
-  C: "Hello"
-};
-
-console.log(evaluator.evaluate('(A + 3) * 2 + B')); // 15
-console.log(evaluator.evaluate('C + " World"')); // "Hello World"
-console.log(evaluator.evaluate('A = B')); // 0
-console.log(evaluator.evaluate('A < B')); // 1
-console.log(evaluator.evaluate('(A + B) * 2')); // 30
-*/

@@ -1,6 +1,7 @@
-import { BasicEvaluator } from './evaluator.js';
+import { BASICDisplay } from './display.js';
+import { BASICEvaluator } from './evaluator.js';
 
-export class BasicInterpreter {
+export class BASICInterpreter {
   constructor() {
     /**
      * Table of line numbers and corresponding lines
@@ -18,8 +19,10 @@ export class BasicInterpreter {
     this.whileStack = [];
 
     this.haltProgram = false;
+    this.verbose = false;
 
-    this.evaluator = new BasicEvaluator(this.variables);
+    this.evaluator = new BASICEvaluator(this.variables);
+    this.display = new BASICDisplay(16, 16);
   }
 
   /**
@@ -83,7 +86,7 @@ export class BasicInterpreter {
     let [, command, args] = code.match(/^(\w+)\s*(.*)$/);
     args = args.trim();
 
-    console.log(`Executing command ${command} with arguments '${args}'`)
+    this.log(`Executing command ${command} with arguments '${args}'`)
     switch (command) {
       case 'LET':
         this.handleLet(args);
@@ -134,27 +137,27 @@ export class BasicInterpreter {
   handleLet(args) {
     // Match Pattern: <VARIABLE> = <VALUE>
     const [, variable, value] = args.match(/^(\w+)\s*=\s*(.*)$/);
-    console.log(` - VARIABLE: ${variable}`);
-    console.log(` - VALUE: ${value}`);
+    this.log(` - VARIABLE: ${variable}`);
+    this.log(` - VALUE: ${value}`);
 
-    console.log(`Assigning ${value} to variable ${variable}`)
+    this.log(`Assigning ${value} to variable ${variable}`)
     this.variables[variable] = this.evaluate(value);
   }
 
   handleIf(args) {
     // Match Pattern: <CONDITION> THEN <TARGET_LINE>
     const [, condition, targetLine] = args.match(/^(.*)\s*THEN\s*(\d+)$/);
-    console.log(` - CONDITION: ${condition}`);
-    console.log(` - TARGET_LINE: ${targetLine}`);
+    this.log(` - CONDITION: ${condition}`);
+    this.log(` - TARGET_LINE: ${targetLine}`);
 
     const result = this.evaluate(condition);
 
 
     if (this.evaluate(condition)) {
-      console.log(`Condition evaluates to ${result} (true), jump to ${targetLine}`);
+      this.log(`Condition evaluates to ${result} (true), jump to ${targetLine}`);
       this.programCounter = targetLine - 1;
     } else {
-      console.log(`Condition evaluates to ${result} (false)`);
+      this.log(`Condition evaluates to ${result} (false)`);
     }
   }
 
@@ -172,7 +175,7 @@ export class BasicInterpreter {
       stop
     };
 
-    console.log(`Starting FOR loop (${variable} = ${start} TO ${stop})`);
+    this.log(`Starting FOR loop (${variable} = ${start} TO ${stop})`);
 
     this.forStack.push(loop);
   }
@@ -230,21 +233,10 @@ export class BasicInterpreter {
   evaluate(expression) {
     return this.evaluator.evaluate(expression);
   }
+
+  log(message) {
+    if (this.verbose) {
+      console.log(message);
+    }
+  }
 }
-
-
-// Example usage:
-const program = `
-10 LET X = 5
-20 LET Z = 0
-30 LET STOP = 10
-50 FOR Y = 1 TO STOP
-60   LET Z = Z + X
-70   PRINT Z
-80 NEXT Y
-90 END
-`;
-
-const interpreter = new BasicInterpreter();
-interpreter.parse(program);
-interpreter.run();

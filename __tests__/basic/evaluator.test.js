@@ -1,0 +1,119 @@
+import { describe, test, expect } from 'vitest'
+import { BASICEvaluator } from '../../src/basic/evaluator';
+
+describe('evaluating', () => {
+  describe('constant', () => {
+    test('integers', () => {
+      expect(new BASICEvaluator().evaluate('123')).toBe(123);
+    });
+
+    test('small decimal numbers', () => {
+      expect(new BASICEvaluator().evaluate('0.000000001')).toBe(1E-9);
+    });
+
+    test('large decimal numbers', () => {
+      expect(new BASICEvaluator().evaluate('1000000000')).toBe(1E9);
+    });
+
+    test('strings', () => {
+      expect(new BASICEvaluator().evaluate('"hello, world!"')).toBe('hello, world!');
+    });
+  });
+
+  describe('arithmetic expression', () => {
+    test('adding two integers returns sum', () => {
+      expect(new BASICEvaluator().evaluate('13 + 22')).toBe(35);
+    });
+
+    test('adding two decimal numbers returns sum', () => {
+      expect(new BASICEvaluator().evaluate('13.5 + 22.3')).toBe(35.8);
+    });
+
+    test('subracting two integers returns difference', () => {
+      expect(new BASICEvaluator().evaluate('49 - 12')).toBe(37);
+    });
+
+    test('subracting two decimal numbers returns difference', () => {
+      expect(new BASICEvaluator().evaluate('49.8 - 12.4')).toBe(37.4);
+    });
+
+    test('multiplying two integers returns product', () => {
+      expect(new BASICEvaluator().evaluate('8 * 9')).toBe(72);
+    });
+
+    test('multiplying two decimal numbers returns product', () => {
+      expect(new BASICEvaluator().evaluate('10.5 * 8.5')).toBe(89.25);
+    });
+
+    test('dividing two integers with no remainder returns quotient', () => {
+      expect(new BASICEvaluator().evaluate('49 / 7')).toBe(7);
+    });
+
+    test('dividing two integers with remainder returns exact quotient', () => {
+      expect(new BASICEvaluator().evaluate('5 / 2')).toBe(2.5);
+    });
+
+    test('dividing two decimals numbers returns quotient', () => {
+      expect(new BASICEvaluator().evaluate('12.8 / 3.2')).toBe(4);
+    });
+
+  });
+
+  describe('logical operations (single)', () => {
+    describe('greater than >', () => {
+      test('A > B returns 1 when A is larger than B', () => {
+        expect(new BASICEvaluator().evaluate('5 > 3')).toBe(1);
+      });
+
+      test('A > B returns 0 when B is larger than A', () => {
+        expect(new BASICEvaluator().evaluate('3 > 5')).toBe(0);
+      });
+
+      test('A > B returns 0 when A is equal to B', () => {
+        expect(new BASICEvaluator().evaluate('3 > 3')).toBe(0);
+      });
+    });
+
+    describe('less than <', () => {
+      test('A < B returns 1 when A is larger than B', () => {
+        expect(new BASICEvaluator().evaluate('3 < 5')).toBe(1);
+      });
+
+      test('A < B returns 0 when B is larger than A', () => {
+        expect(new BASICEvaluator().evaluate('5 < 3')).toBe(0);
+      });
+
+      test('A < B returns 0 when A is equal to B', () => {
+        expect(new BASICEvaluator().evaluate('3 < 3')).toBe(0);
+      });
+    });
+
+    describe('greater than or equal to >=', () => {
+      test('A >= B returns 1 when A is larger than B', () => {
+        expect(new BASICEvaluator().evaluate('5 >= 3')).toBe(1);
+      });
+
+      test('A >= B returns 0 when B is larger than A', () => {
+        expect(new BASICEvaluator().evaluate('3 >= 5')).toBe(0);
+      });
+
+      test('A >= B returns 1 when A is equal to B', () => {
+        expect(new BASICEvaluator().evaluate('3 >= 3')).toBe(1);
+      });
+    });
+
+    describe('less than or equal to <=', () => {
+      test('A <= B returns 1 when A is larger than B', () => {
+        expect(new BASICEvaluator().evaluate('3 <= 5')).toBe(1);
+      });
+
+      test('A <= B returns 0 when B is larger than A', () => {
+        expect(new BASICEvaluator().evaluate('5 <= 3')).toBe(0);
+      });
+
+      test('A <= B returns 1 when A is equal to B', () => {
+        expect(new BASICEvaluator().evaluate('3 <= 3')).toBe(1);
+      });
+    });
+  });
+});
