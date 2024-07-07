@@ -172,8 +172,26 @@ describe('evaluating', () => {
       expect(new BASICEvaluator().evaluate('4 * (8 - 4) - 8')).toBe(8);
     });
 
-    test('multiple nested groups', () => {
+    test('multiple nested groups (numeric only)', () => {
       expect(new BASICEvaluator().evaluate('5 * (8 - (4 + 3)) - 8')).toBe(-3);
+    });
+
+    test('multiple nested groups (numeric + string)', () => {
+      expect(new BASICEvaluator().evaluate('5 + (" dude " + (4 + "hey")) + 8')).toBe("5 dude 4hey8");
+    });
+  });
+
+  describe('logical + arithmetic expression (nested)', () => {
+    test('+ is evaluated before >', () => {
+      expect(new BASICEvaluator().evaluate('10 > 3 + 4')).toBe(1);
+    });
+
+    test('* is evaluated before <', () => {
+      expect(new BASICEvaluator().evaluate('8 * 3 < 50')).toBe(1);
+    });
+
+    test('mega expression!', () => {
+      expect(new BASICEvaluator().evaluate('8 * (30 + 4 - (2 * 10)) = 2 * (66 - (2 + 4 * 2))')).toBe(1);
     });
   });
 });

@@ -1,5 +1,6 @@
 import { BASICDisplay } from './display.js';
 import { BASICEvaluator } from './evaluator.js';
+import { BASICOutput } from './output.js';
 
 export class BASICInterpreter {
   constructor() {
@@ -19,44 +20,15 @@ export class BASICInterpreter {
     this.whileStack = [];
 
     this.haltProgram = false;
-    this.verbose = false;
 
     this.evaluator = new BASICEvaluator(this.variables);
     this.display = new BASICDisplay(16, 16);
+    this.output = new BASICOutput();
   }
 
-  /**
-   * Parses a program
-   * @param {string} program 
-   */
-  parse(program) {
-    this.parseErrors = [];
+  run(program) {
+    this.parse(program);
 
-    this.lines = new Map();
-    const lines = program.split('\n');
-    for (let line of lines) {
-      // Match format
-      // <LINE NUMBER> <EXPRESSION>
-      const match = line.match(/^(\d+)\s*(.*)$/);
-      if (match) {
-        const lineNumber = parseInt(match[1]);
-
-        if (isNaN(lineNumber)) {
-          this.parseErrors.push({
-            message: 'Parsing Error: Invalid line number',
-            lineNumber: null,
-            code: line
-          });
-        } else {
-          const code = match[2].trim();
-          this.lines.set(lineNumber, code);
-        }
-      }
-    }
-
-  }
-
-  run() {
     // Get line numbers and sort from smallest to largest
     const lineNumbers = [...this.lines.keys()];
     lineNumbers.sort((a, b) => a - b);
@@ -75,6 +47,38 @@ export class BASICInterpreter {
       this.execute(code);
       this.programCounter++;
     }
+
+    console.log(this.output.buffer);
+  }
+
+  /**
+   * Parses a program
+   * @param {string} program 
+   */
+  parse(program) {
+    this.parseErrors = [];
+
+    this.lines = new Map();
+    const lines = program.split('\n');
+    for (let line of lines) {
+      // Match format
+      // <LINE NUMBER> <EXPRESSION>
+      const match = line.match(/^\s*(\d+)\s*(.*)\s*$/);
+      if (match) {
+        const lineNumber = parseInt(match[1]);
+
+        if (isNaN(lineNumber)) {
+          this.parseErrors.push({
+            message: 'Parsing Error: Invalid line number',
+            lineNumber: null,
+            code: line
+          });
+        } else {
+          const code = match[2].trim();
+          this.lines.set(lineNumber, code);
+        }
+      }
+    }
   }
 
   /**
@@ -86,7 +90,6 @@ export class BASICInterpreter {
     let [, command, args] = code.match(/^(\w+)\s*(.*)$/);
     args = args.trim();
 
-    this.log(`Executing command ${command} with arguments '${args}'`)
     switch (command) {
       case 'LET':
         this.handleLet(args);
@@ -143,27 +146,16 @@ export class BASICInterpreter {
   handleLet(args) {
     // Match Pattern: <VARIABLE> = <VALUE>
     const [, variable, value] = args.match(/^(\w+)\s*=\s*(.*)$/);
-    this.log(` - VARIABLE: ${variable}`);
-    this.log(` - VALUE: ${value}`);
-
-    this.log(`Assigning ${value} to variable ${variable}`)
     this.variables[variable] = this.evaluate(value);
   }
 
   handleIf(args) {
     // Match Pattern: <CONDITION> THEN <TARGET_LINE>
     const [, condition, targetLine] = args.match(/^(.*)\s*THEN\s*(\d+)$/);
-    this.log(` - CONDITION: ${condition}`);
-    this.log(` - TARGET_LINE: ${targetLine}`);
-
     const result = this.evaluate(condition);
 
-
     if (this.evaluate(condition)) {
-      this.log(`Condition evaluates to ${result} (true), jump to ${targetLine}`);
       this.programCounter = targetLine - 1;
-    } else {
-      this.log(`Condition evaluates to ${result} (false)`);
     }
   }
 
@@ -180,8 +172,6 @@ export class BASICInterpreter {
       lineNumber: this.programCounter,
       stop
     };
-
-    this.log(`Starting FOR loop (${variable} = ${start} TO ${stop})`);
 
     this.forStack.push(loop);
   }
@@ -233,7 +223,7 @@ export class BASICInterpreter {
 
   handlePrint(args) {
     const message = this.evaluate(args);
-    console.log(message);
+    this.output.writeLine(message);
   }
 
   handleSetPixel(args) {
@@ -248,11 +238,5 @@ export class BASICInterpreter {
 
   evaluate(expression) {
     return this.evaluator.evaluate(expression);
-  }
-
-  log(message) {
-    if (this.verbose) {
-      console.log(message);
-    }
   }
 }

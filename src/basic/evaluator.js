@@ -1,3 +1,4 @@
+// Higher precendence means that operation is evaluated first
 const precedence = {
   '=': 1,
   '<>': 2,
