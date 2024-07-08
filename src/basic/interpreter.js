@@ -4,17 +4,14 @@ import { BASICOutput } from './output.js';
 
 export class BASICInterpreter {
   constructor() {
+    this.lines = [];
+    this.errors = [];
+
     /**
-     * Table of line numbers and corresponding lines
-     * @type {Map<number, string}
+     * @type {{ name: string, lineNumber: number }}
      */
-    this.lines = {};
-
-    this.parseErrors = [];
-    this.runtimeErrors = [];
-
+    this.subroutines = {};
     this.variables = {};
-    this.programCounter = 0;
     this.callStack = [];
     this.forStack = [];
     this.whileStack = [];
@@ -26,59 +23,48 @@ export class BASICInterpreter {
     this.output = new BASICOutput();
   }
 
+  /**
+   * @param {string} program 
+   */
   run(program) {
-    this.parse(program);
-
-    // Get line numbers and sort from smallest to largest
-    const lineNumbers = [...this.lines.keys()];
-    lineNumbers.sort((a, b) => a - b);
-
-    // Get the maximum line number so we know when to stop
-    const maxLineNumber = lineNumbers[lineNumbers.length - 1];
-
     this.programCounter = 0;
-    while (!this.haltProgram && this.programCounter <= maxLineNumber) {
-      if (!this.lines.has(this.programCounter)) {
-        this.programCounter++;
-        continue;
-      }
+    this.errors = [];
 
-      const code = this.lines.get(this.programCounter);
-      this.execute(code);
+    // Break program into lines, throwing out whitespace
+    this.lines = program
+      .split('\n')
+      .map(x => x.trim());
+
+    // Identify all subroutines and keep record of the starting line number
+    this.lines
+      .forEach((line, lineNumber) => {
+        if (!line) return;
+
+        let match = line.match(/^SUB\s+([A-Z0-9_]+)\s*$/);
+
+        if (!match) return;
+
+        let name = match[1];
+        // Subroutine names must be unique
+        if (this.subroutines[name]) {
+          this.errors.push({
+            error: `Subroutine already exists with name ${name}`,
+            lineNumber
+          });
+        } else {
+          this.subroutines[name] = lineNumber;
+        }
+      });
+
+    // Run program
+    while (!this.haltProgram && this.programCounter < this.lines.length) {
+      if (this.lines[this.programCounter]) {
+        this.execute(this.lines[this.programCounter]);
+      }
       this.programCounter++;
     }
 
     console.log(this.output.buffer);
-  }
-
-  /**
-   * Parses a program
-   * @param {string} program 
-   */
-  parse(program) {
-    this.parseErrors = [];
-
-    this.lines = new Map();
-    const lines = program.split('\n');
-    for (let line of lines) {
-      // Match format
-      // <LINE NUMBER> <EXPRESSION>
-      const match = line.match(/^\s*(\d+)\s*(.*)\s*$/);
-      if (match) {
-        const lineNumber = parseInt(match[1]);
-
-        if (isNaN(lineNumber)) {
-          this.parseErrors.push({
-            message: 'Parsing Error: Invalid line number',
-            lineNumber: null,
-            code: line
-          });
-        } else {
-          const code = match[2].trim();
-          this.lines.set(lineNumber, code);
-        }
-      }
-    }
   }
 
   /**
@@ -109,9 +95,6 @@ export class BASICInterpreter {
       case 'WEND':
         this.handleWend(args);
         break;
-      case 'GOTO':
-        this.handleGoto(args);
-        break;
       case 'GOSUB':
         this.handleGosub(args);
         break;
@@ -131,13 +114,12 @@ export class BASICInterpreter {
         this.haltProgram = true;
         break;
       case 'REM':
-        // Comment, do nothing
+      case 'SUB':
         break;
       default:
-        this.runtimeErrors.push({
+        this.errors.push({
           error: `Unknown command: ${command}`,
-          lineNumber: this.programCounter,
-          line: code
+          lineNumber: this.programCounter
         });
         return;
     }
@@ -150,12 +132,11 @@ export class BASICInterpreter {
   }
 
   handleIf(args) {
-    // Match Pattern: <CONDITION> THEN <TARGET_LINE>
-    const [, condition, targetLine] = args.match(/^(.*)\s*THEN\s*(\d+)$/);
-    const result = this.evaluate(condition);
+    // Match Pattern: <CONDITION> THEN <CODE>
+    const [, condition, code] = args.match(/^(.*)\s*THEN\s*(.*)$/);
 
     if (this.evaluate(condition)) {
-      this.programCounter = targetLine - 1;
+      this.execute(code);
     }
   }
 
@@ -206,15 +187,19 @@ export class BASICInterpreter {
     }
   }
 
-  handleGoto(args) {
-    const targetLine = parseInt(args);
-    this.programCounter = targetLine - 1;
-  }
-
   handleGosub(args) {
-    const targetLine = parseInt(args);
+    const [, subName] = args.match(/^([A-Z0-9_]+)$/);
+    const subStartLine = this.subroutines[subName];
+
+    if (!subStartLine) {
+      this.errors.push({
+        error: `Subroutine ${subName} does not exist`,
+        lineNumber: this.programCounter
+      })
+    }
+
     this.callStack.push(this.programCounter);
-    this.programCounter = targetLine - 1;
+    this.programCounter = subStartLine;
   }
 
   handleReturn() {

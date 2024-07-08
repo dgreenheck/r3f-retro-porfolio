@@ -40,9 +40,9 @@ export class BASICEvaluator {
    * @returns {string[]} Returns an array of tokens
    */
   tokenize(expression) {
-    // ([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=()]):  This part is a capturing
+    // ([A-Z]+|\d+\.?\d*|".*?"|[-+*/<>=()]):  This part is a capturing
     //  group that matches one of the following alternatives:
-    //   1) [A-Za-z]+: Matches one or more letters (uppercase or lowercase).
+    //   1) [A-Z]+: Matches one or more letters (uppercase or lowercase).
     //   2) \d+\.?\d*: Matches a number, which can be an integer or a decimal:
     //     a)  \d+ matches one or more digits.
     //     b)  \.? optionally matches a decimal point.
@@ -53,7 +53,7 @@ export class BASICEvaluator {
     //     c)  " matches the closing double quote.
     //   4) [-+*/<>=()]: Matches one or more character from the set -, +, *, /, <, >, =, (, and ).
     //   5) [()]: Matches one character from the set (, )
-    const regex = /\s*([A-Za-z]+|\d+\.?\d*|".*?"|[-+*/<>=]+|[()])\s*/g;
+    const regex = /\s*([A-Z0-9_]+|\d+\.?\d*|".*?"|[-+*/<>=]+|[()])\s*/g;
 
     return expression
       .match(regex)
@@ -75,7 +75,7 @@ export class BASICEvaluator {
         outputQueue.push(parseFloat(token));
       } else if (/^".*"$/.test(token)) {
         outputQueue.push(token.slice(1, -1));
-      } else if (/^[A-Za-z]+$/.test(token)) {
+      } else if (/^[A-Z0-9_]+$/.test(token)) {
         outputQueue.push(this.variables[token] !== undefined ? this.variables[token] : 0);
       } else if (isOperator(token)) {
         const nextOperator = operatorStack[operatorStack.length - 1];
